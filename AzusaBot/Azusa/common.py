@@ -26,10 +26,13 @@ async def help(session, bot):
         msg.append(MS.text('群主及管理员可控制群聊中插件的开关。使用指令“disable_<模块名>”（例：disable_chat）可在本群禁用对应模块的功能。\n'))
         msg.append(MS.text('Azusa现在启用的功能有：' + '，'.join(p.name for p in plugins) + '\n'))
         msg.append(MS.text('查询详细帮助请使用指令“帮助 <功能名>”（例：“帮助 公主连结公会战”）\n'))
+        msg.append(MS.text('-' * 20))
         msg.append(MS.text('常用功能（无法禁用）：\n'))
         msg.append(MS.text('手动复读<echo>。复读参数。例：“echo ABC”，复读ABC。\n'))
         msg.append(MS.text('骰子<dice/骰子>。为自己及at到的人(群聊)进行随机骰点。\n'))
+        msg.append(MS.text('查询插件状态<query_modules_status/查询插件状态>。查询对应的群或者个人的插件状态。\n'))
         if session.event['user_id'] in bot.config.SUPERUSERS:
+            msg.append(MS.text('-' * 20))
             msg.append(MS.text('测试指令<test>。仅superuser可以使用。\n'))
             msg.append(MS.text('数据保存<datasave>。仅superuser可以使用。执行所有的save命令，额外保存群与好友的模块控制开关信息。\n'))
             msg.append(MS.text('数据读取<dataload>。仅superuser可以使用。执行所有的load命令。额外读取群与好友的模块控制开关信息，会覆盖现有信息。\n'))

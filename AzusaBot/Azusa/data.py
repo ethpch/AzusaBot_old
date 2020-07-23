@@ -3,10 +3,13 @@ import logging
 import os
 import shutil
 from collections import defaultdict
+from nonebot import permission as perm
+from nonebot import Message as M
+from nonebot import MessageSegment as MS
 from nonebot.command import call_command
 from AzusaBot import config
 from Azusa.utils import storage
-from Azusa.middleware import on_notice, on_websocket_connect
+from Azusa.middleware import on_command, on_notice, on_websocket_connect
 
 logger = logging.getLogger('Azusa.data')
 
@@ -63,7 +66,7 @@ async def data_initialize(event, bot):
                 groupdict[selfid][id]['mods_config']['pixiv']['allowr18g'] = False
             for id in frienddict[selfid].keys():
                 frienddict[selfid][id]['mods_config']['pixiv']['allowr18'] = True
-                frienddict[selfid][id]['mods_config']['pixiv']['allowr18g'] = True
+                frienddict[selfid][id]['mods_config']['pixiv']['allowr18g'] = False
         # 尝试读取已保存的信息
         datastorage = storage.getStorageObj('mods_config_data')
         mods_config = datastorage.load('data')
@@ -172,3 +175,21 @@ async def deliver_resource(event, bot):
                     shutil.copyfile(fullpath, target)
     except FileNotFoundError as e:
         logger.exception('directory error')
+
+@on_command('query_modules_status', logger=logger, aliases=('查询插件状态'), permission=perm.GROUP_ADMIN | perm.PRIVATE_FRIEND, only_to_me=False)
+async def query_modules_status(session, bot):
+    msg = M()
+    if session.event['message_type'] == 'group':
+        groupid = session.event['group_id']
+        msg.append(MS.text(f'群{groupid}的插件启用状态：\n'))
+        mods_config = groupdict[session.self_id][groupid]['mods_config']
+    else:
+        userid = session.event['user_id']
+        msg.append(MS.text(f'用户{userid}的插件启用状态：\n'))
+        mods_config = frienddict[session.self_id][userid]['mods_config']
+    for k in mods_config.keys():
+        msg.append(MS.text(f'{k}：{"已禁用" if mods_config[k]["disable"] else "已启用"}\n'))
+        if k == 'pixiv':
+            msg.append(MS.text(f'{k}（R18）：{"已启用" if mods_config[k]["allowr18"] else "已禁用"}\n'))
+            msg.append(MS.text(f'{k}（R18G）：{"已启用" if mods_config[k]["allowr18g"] else "已禁用"}\n'))
+    await session.send(msg)

@@ -34,52 +34,68 @@ async def init_pixiv_instance(event, bot):
 # 控制指令
 # 控制R18与R18G
 @pixiv_command.command('enabler18',
-                       checkfunc=lambda session: _pixiv_instance is not None and \
-                           session.event['message_type'] == 'group',
+                       checkfunc=lambda session: _pixiv_instance is not None,
                        aliases=('允许R18'),
-                       permission=perm.GROUP_ADMIN,
+                       permission=perm.GROUP_ADMIN | perm.PRIVATE_FRIEND,
                        privileged=False)
 async def enabler18(session, bot):
     selfid = session.self_id
-    groupid = session.event['group_id']
-    groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18'] = True
-    await session.send(M(f'群{groupid}已允许R18图像'))
+    if session.event['message_type'] == 'group':
+        groupid = session.event['group_id']
+        groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18'] = True
+        await session.send(M(f'群{groupid}已允许R18图像'))
+    else:
+        userid = session.event['user_id']
+        frienddict[selfid][userid]['mods_config']['pixiv']['allowr18'] = True
+        await session.send(M(f'用户{userid}已允许R18图像'))
 
 @pixiv_command.command('disabler18',
-                       checkfunc=lambda session: _pixiv_instance is not None and \
-                           session.event['message_type'] == 'group',
+                       checkfunc=lambda session: _pixiv_instance is not None,
                        aliases=('禁止R18'),
-                       permission=perm.GROUP_ADMIN,
+                       permission=perm.GROUP_ADMIN | perm.PRIVATE_FRIEND,
                        privileged=False)
 async def disabler18(session, bot):
     selfid = session.self_id
-    groupid = session.event['group_id']
-    groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18'] = False
-    await session.send(M(f'群{groupid}已禁止R18图像'))
+    if session.event['message_type'] == 'group':
+        groupid = session.event['group_id']
+        groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18'] = False
+        await session.send(M(f'群{groupid}已禁止R18图像'))
+    else:
+        userid = session.event['user_id']
+        frienddict[selfid][userid]['mods_config']['pixiv']['allowr18'] = False
+        await session.send(M(f'用户{userid}已禁止R18图像'))
 
 @pixiv_command.command('enabler18g',
-                       checkfunc=lambda session: _pixiv_instance is not None and \
-                           session.event['message_type'] == 'group',
+                       checkfunc=lambda session: _pixiv_instance is not None,
                        aliases=('允许R18G'),
-                       permission=perm.GROUP_ADMIN,
+                       permission=perm.GROUP_ADMIN | perm.PRIVATE_FRIEND,
                        privileged=False)
 async def enabler18g(session, bot):
     selfid = session.self_id
-    groupid = session.event['group_id']
-    groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18g'] = True
-    await session.send(M(f'群{groupid}已允许R18G图像'))
+    if session.event['message_type'] == 'group':
+        groupid = session.event['group_id']
+        groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18g'] = True
+        await session.send(M(f'群{groupid}已允许R18G图像'))
+    else:
+        userid = session.event['user_id']
+        frienddict[selfid][userid]['mods_config']['pixiv']['allowr18g'] = True
+        await session.send(M(f'用户{userid}已允许R18G图像'))
 
 @pixiv_command.command('disabler18g',
-                       checkfunc=lambda session: _pixiv_instance is not None and \
-                           session.event['message_type'] == 'group',
+                       checkfunc=lambda session: _pixiv_instance is not None,
                        aliases=('禁止R18G'),
-                       permission=perm.GROUP_ADMIN,
+                       permission=perm.GROUP_ADMIN | perm.PRIVATE_FRIEND,
                        privileged=False)
 async def disabler18g(session, bot):
     selfid = session.self_id
-    groupid = session.event['group_id']
-    groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18g'] = False
-    await session.send(M(f'群{groupid}已禁止R18G图像'))
+    if session.event['message_type'] == 'group':
+        groupid = session.event['group_id']
+        groupdict[selfid][groupid]['mods_config']['pixiv']['allowr18g'] = False
+        await session.send(M(f'群{groupid}已禁止R18G图像'))
+    else:
+        userid = session.event['user_id']
+        frienddict[selfid][userid]['mods_config']['pixiv']['allowr18g'] = False
+        await session.send(M(f'用户{userid}已禁止R18G图像'))
 
 # 判断是否允许插件运行
 async def _check(session) -> bool:
@@ -862,7 +878,7 @@ pattern0 = re.compile(r'([色涩瑟蛇铜]|社保?|射爆?)图来?$')
 pattern00 = re.compile(r'(有没有|[要再多]?来一?[点份张]).*的?([色涩瑟蛇铜]|社保?|射爆?)图')
 pattern01 = re.compile(r'.*的?([色涩瑟蛇铜]|社保?|射爆?)图来?')
 pattern1 = re.compile(r'^不够([色涩瑟蛇铜大骚]|社保?|射爆?)$')
-pattern2 = re.compile(r'^[要再多]?来一?[点份张].*([铜丝腿腋尻胸乳足]|屁股|大姐姐|奶子|奈子|萘子|莱莱|欧派)$')
+pattern2 = re.compile(r'^[要再多]?来一?[点份张].*([铜丝腿腋尻足]|屁股|大姐姐|奶子|奈子|萘子|莱莱|欧派)$')
 pattern3 = re.compile(r'^[要再多]?来一?[点份张].*$')
 @on_message(logger=logger,
             checkfunc=lambda event: SIGNAL['RegisteredQQ'][event['self_id']]['coolq_edition'] == 'pro' and _pixiv_instance is not None and \
@@ -941,7 +957,7 @@ async def random_image(event, bot):
             elif '大姐姐' in msg:
                 tags = ('むちむち', 'ぽっちゃり')
                 no_image_tips = '没大姐姐了'
-            elif re.search(r'[胸乳]|奶子|奈子|萘子|莱莱|欧派', msg):
+            elif re.search(r'奶子|奈子|萘子|莱莱|欧派', msg):
                 tags = ('おっぱい', '魅惑の谷間', '巨乳')
                 no_image_tips = '没欧派了'
             elif '足' in msg:

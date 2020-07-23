@@ -18,8 +18,7 @@ pcr_battle_command = CommandGroup('pcr.battle', logger=logger, only_to_me=False,
 
 # 创建公会单位
 @pcr_battle_command.command('createclan',
-                            checkfunc=lambda session: session.event['message_type'] == 'group' and \
-                                not groupdict[session.self_id][session.event['group_id']]['mods_config']['pcr']['disable'],
+                            checkfunc=lambda session: not groupdict[session.self_id][session.event['group_id']]['mods_config']['pcr']['disable'],
                             aliases=('创建公会', '注册公会'),
                             only_to_me=True,
                             permission=perm.GROUP_OWNER)
@@ -51,8 +50,7 @@ async def createclan_parser(session):
 
 # 删除公会单位
 @pcr_battle_command.command('deleteclan',
-                            checkfunc=lambda session: session.event['message_type'] == 'group' and \
-                                not groupdict[session.self_id][session.event['group_id']]['mods_config']['pcr']['disable'],
+                            checkfunc=lambda session: not groupdict[session.self_id][session.event['group_id']]['mods_config']['pcr']['disable'],
                             aliases=('删除公会', '解除注册公会'),
                             only_to_me=True,
                             permission=perm.GROUP_OWNER)
@@ -68,7 +66,7 @@ async def deleteclan(session, bot):
 
 # 用于检查消息类型与是否开启功能
 def _check(session):
-    return True if session.event['message_type'] == 'group' and session.event['group_id'] in _clandict.keys() else False
+    return True if session.event['group_id'] in _clandict.keys() else False
 
 # 开始新公会战
 @pcr_battle_command.command('startBattle',
