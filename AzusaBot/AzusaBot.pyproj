@@ -1,0 +1,112 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>7d713e67-3c4b-48f4-aada-8d74018934ff</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>AzusaBot.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>AzusaBot</Name>
+    <RootNamespace>AzusaBot</RootNamespace>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
+    <InterpreterId>CondaEnv|CondaEnv|mybot</InterpreterId>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="AzusaBot.py" />
+    <Compile Include="Azusa\common.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\data.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\exceptions.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\log.py" />
+    <Compile Include="Azusa\middleware.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\chat\group\command.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\chat\group\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\chat\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\pcr\battle\command.py" />
+    <Compile Include="Azusa\modules\pcr\battle\_boss.py" />
+    <Compile Include="Azusa\modules\pcr\battle\_master.py" />
+    <Compile Include="Azusa\modules\pcr\battle\_player.py" />
+    <Compile Include="Azusa\modules\pcr\battle\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\pcr\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\pixiv\command.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\pixiv\_pixiv.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\pixiv\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\modules\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Azusa\utils.py" />
+    <Compile Include="Azusa\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="config_example.py" />
+    <Compile Include="config.py">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Azusa\" />
+    <Folder Include="Azusa\data\" />
+    <Folder Include="Azusa\modules\" />
+    <Folder Include="Azusa\log\" />
+    <Folder Include="Azusa\modules\chat\" />
+    <Folder Include="Azusa\modules\chat\group\" />
+    <Folder Include="Azusa\modules\pcr\" />
+    <Folder Include="Azusa\modules\pcr\battle\" />
+    <Folder Include="Azusa\resources\pcr\" />
+    <Folder Include="Azusa\modules\pixiv\" />
+    <Folder Include="Azusa\modules\pixiv\image\" />
+    <Folder Include="Azusa\resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Azusa\resources\pcr\suspension.jpg" />
+    <Content Include="Azusa\resources\pcr\urgeattack.jpg" />
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="CondaEnv|CondaEnv|mybot" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

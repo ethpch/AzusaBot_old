@@ -338,3 +338,6 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/AzusaBot/config.py
+/AzusaBot/Azusa/data/
+/AzusaBot/Azusa/modules/pixiv/image/
