@@ -5,6 +5,7 @@ import re
 import io
 import random
 from copy import deepcopy
+from collections import Counter
 from typing import Generator
 from pixivpy_async import AppPixivAPI, PixivError
 from PIL import Image
@@ -441,20 +442,21 @@ class pixiv_image():
         keywords_list = keywords.split(' ')
         result_keywords_list = []
         for item in keywords_list:
-            temptag = item
-            temp = await self.__api.search_illust(word=temptag)
             class jumpout(Exception):
                 pass
             try:
-                for illust in temp.illusts:
-                    for tag in illust.tags:
-                        if tag['translated_name'] and not tag['name'].isalpha()\
-                            and item in tag['translated_name'] and not tag['name'].endswith('users入り'):
-                            temptag = tag['name']
+                local_targeted_tags = []
+                for id in self.__data['illusts'].keys():
+                    for tag in self.__data['illusts'][id]['tags']:
+                        if item == tag['name'] or item == tag['translated_name']:
+                            result_keywords_list.append(tag['name'])
                             raise jumpout
-            except (AttributeError, jumpout):
+                        elif tag['translated_name'] and item in tag['translated_name'] and not tag['name'].endswith('users入り'):
+                            local_targeted_tags.append(tag['name'])
+                local_targeted_tags_counter = Counter(local_targeted_tags)
+                result_keywords_list.append(local_targeted_tags_counter.most_common(1)[0][0] if local_targeted_tags_counter else item)
+            except jumpout:
                 pass
-            result_keywords_list.append(temptag)
         if result_keywords_list:
             keywords = ' '.join(result_keywords_list)
         if min_bookmarks >= 5000:
