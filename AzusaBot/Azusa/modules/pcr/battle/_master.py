@@ -80,15 +80,15 @@ class master():
                 1: {1: 6000000, 2: 8000000, 3: 10000000, 4: 12000000, 5: 15000000},
                 2: {1: 6000000, 2: 8000000, 3: 10000000, 4: 12000000, 5: 15000000},
                 3: {1: 7000000, 2: 9000000, 3: 13000000, 4: 15000000, 5: 20000000},
-                4: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+                4: {1: 15000000, 2: 16000000, 3: 18000000, 4: 19000000, 5: 20000000},
                 5: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
                 }
-            stagechange = {1: 1, 2: 4, 3: 11, 4: 1000, 5: 10000}
+            stagechange = {1: 1, 2: 4, 3: 11, 4: 35, 5: 10000}
             scorebuff = {
                 1: {1: 1.2, 2: 1.2, 3: 1.3, 4: 1.4, 5: 1.5},
                 2: {1: 1.6, 2: 1.6, 3: 1.8, 4: 1.9, 5: 2},
                 3: {1: 2, 2: 2, 3: 2.4, 4: 2.4, 5: 2.6},
-                4: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+                4: {1: 3.5, 2: 3.5, 3: 3.7, 4: 3.8, 5: 4},
                 5: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
                 }
         elif type == 'jp':
@@ -859,29 +859,30 @@ class master():
 
     # 读取所有信息，谨慎更改此方法
     @debuglog(logger)
-    def callLoadAllData(self):
+    def callLoadAllData(self, only_player: bool=False):
         """
         从文件中读取所有信息。
         """
         d = self.__storage.load(f'{self.__groupid}_alldata')
-        self.__boss.alldata = d['boss']
         for k, v in d['playerdict'].items():
             self.__playerdict[int(k)] = player()
             self.__playerdict[int(k)].alldata = v
-        scorebuff = literal_eval(d['scorebuff'])
-        for k, v in scorebuff.items():
-            player.set_scorebuff(k, v)
         IDAndAlias = namedbidict('IDAndAlias', 'ID', 'Alias')
         self.__IDAndAliasDict = IDAndAlias()
         for k, v in self.__playerdict.items():
             self.__IDAndAliasDict[k] = v.alias
-        self.__is_battle_active = d['is_battle_active']
-        self.__is_current_boss = d['is_current_boss']
-        self.__totaldays = d['totaldays']
-        self.__daypassed = d['daypassed']
-        self.__session = d['session']
-        self.__lastattack = d['lastattack']
-        self.__solutions = literal_eval(d['solutions'])
+        if not only_player:
+            self.__boss.alldata = d['boss']
+            scorebuff = literal_eval(d['scorebuff'])
+            for k, v in scorebuff.items():
+                player.set_scorebuff(k, v)
+            self.__is_battle_active = d['is_battle_active']
+            self.__is_current_boss = d['is_current_boss']
+            self.__totaldays = d['totaldays']
+            self.__daypassed = d['daypassed']
+            self.__session = d['session']
+            self.__lastattack = d['lastattack']
+            self.__solutions = literal_eval(d['solutions'])
 
     # 保存会战结果
     @debuglog(logger)

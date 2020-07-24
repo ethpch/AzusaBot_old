@@ -1327,8 +1327,9 @@ async def udload(session, bot):
         if _clandict[groupid].is_battle_active:
             msg.append(MS.text(f'注册群：{groupid}，请在会战未开启时使用该功能\n'))
         else:
+            only_player = True if '仅玩家' in session.current_arg_text.strip() else False
             try:
-                _clandict[groupid].callLoadAllData()
+                _clandict[groupid].callLoadAllData(only_player=only_player)
                 msg.append(MS.text(f'注册群：{groupid}，已读取保存的会战信息\n'))
             except KeyError:
                 msg.append(MS.text(f'注册群：{groupid}，读取保存的会战信息失败，可能不存在会战信息\n'))

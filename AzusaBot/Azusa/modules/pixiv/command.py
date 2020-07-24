@@ -204,9 +204,6 @@ async def common_multiimage_msgsender(session, pids: tuple, original: bool=False
         original: 是否使用原图
         multiimage: 是否使用多图
     '''
-    if not pids:
-        await session.send(M('未查询到信息'))
-        return
     msg = M()
     msglimit = 20
     msgcurrent = 0
@@ -241,9 +238,6 @@ async def common_multiuser_msgsender(session, uids: tuple):
         session
         uids: 作者uid组成的元组
     """
-    if not uids:
-        await session.send(M('未查询到信息'))
-        return
     msg = M()
     msglimit = 20
     msgcurrent = 0
@@ -257,6 +251,10 @@ async def common_multiuser_msgsender(session, uids: tuple):
         msg.append(MS.text('-' * 20 + '\n'))
         msg.append(MS.text(f'用户名：{user["user"]["name"]}\n'))
         msg.append(MS.text(f'用户ID：{user["user"]["id"]}\n'))
+        if SIGNAL['RegisteredQQ'][session.self_id]['coolq_edition'] == 'pro' and user['user']['profile_image']:
+            msg.append(MS.text('用户头像：'))
+            msg.append(MS.image(user['user']['profile_image']))
+            msg.append(MS.text('\n'))
     if msg:
         await session.send(msg)
 
@@ -364,7 +362,7 @@ async def recommend(session, bot):
     original = session.state['original']
     multiimage = session.state['multiimage']
     r18, r18g = await _getperm(session)
-    await session.send(M('开始搜索推荐第{page}页数据'))
+    await session.send(M(f'开始搜索推荐第{page}页数据'))
     try:
         await refreshtoken()
         pids = await _pixiv_instance.illust_recommended(type=type, page=page, min_bookmarks=minbookmarks, original_image=original, multiimage=multiimage, allowr18=r18, allowr18g=r18g)
@@ -376,7 +374,7 @@ async def recommend(session, bot):
     else:
         await common_multiimage_msgsender(session, pids, original, multiimage)
     finally:
-        await session.send(M('搜索推荐第{page}页完毕'))
+        await session.send(M(f'搜索推荐第{page}页完毕'))
 
 @recommend.args_parser
 async def recommend_parser(session):
@@ -550,6 +548,39 @@ async def uid_search_detail(session, bot):
 async def uid_search_detail_parser(session):
     await common_uid_parser(session)
 
+# 用户搜索
+@pixiv_command.command('users_search', checkfunc=_check, aliases=('用户搜索'))
+async def users_search(session, bot):
+    page = session.state['page']
+    keywords = session.get('keywords', prompt='输入关键词')
+    await session.send(M(f'开始依据关键词“{keywords}”搜索用户'))
+    try:
+        await refreshtoken()
+        uids = await _pixiv_instance.search_user(keywords, page=page)
+    except InfoNotFoundError:
+        await session.send(M('未查询到信息'))
+    except PixivError as e:
+        await session.send(M('插件出错'))
+        raise e
+    else:
+        await common_multiuser_msgsender(session, uids)
+    finally:
+        await session.send(M(f'依据关键词“{keywords}”搜索搜索用户第{page}页完毕'))
+
+@users_search.args_parser
+async def users_search_parser(session):
+    stripped_args = session.current_arg_text.strip()
+    if session.is_first_run:
+        re_page = re_page_object.search(stripped_args)
+        session.state['page'] = int(re_page.group(0)[1:]) if re_page else 1
+        stripped_args = re_page_object.sub('', stripped_args).strip()
+        if stripped_args:
+            session.state['keywords'] = stripped_args
+    elif not stripped_args:
+        session.pause(M('关键词不能为空'))
+    else:
+        session.state['keywords'] = stripped_args
+
 # 用户作品列表
 @pixiv_command.command('uid_search_illusts', checkfunc=_check, aliases=('UID搜索作品'))
 async def uid_search_illusts(session, bot):
@@ -588,7 +619,7 @@ async def uid_search_following(session, bot):
     await session.send(M(f'开始搜索用户{uid}的关注用户第{page}页数据'))
     try:
         await refreshtoken()
-        uids = await _pixiv_instance.user_following(uid, page)
+        uids = await _pixiv_instance.user_following(uid, page=page)
     except InfoNotFoundError:
         await session.send(M('未查询到信息'))
     except PixivError as e:
@@ -602,6 +633,9 @@ async def uid_search_following(session, bot):
 @uid_search_following.args_parser
 async def uid_search_following_parser(session):
     await common_uid_parser(session)
+    stripped_args = session.current_arg_text.strip()
+    re_page = re_page_object.search(stripped_args)
+    session.state['page'] = int(re_page.group(0)[1:]) if re_page else 1
 
 # 好P友
 @pixiv_command.command('uid_search_mypixiv', checkfunc=_check, aliases=('UID搜索好P友'))
@@ -611,7 +645,7 @@ async def uid_search_mypixiv(session, bot):
     await session.send(M(f'开始搜索用户{uid}的好P友第{page}页数据'))
     try:
         await refreshtoken()
-        uids = await _pixiv_instance.user_mypixiv(uid, page)
+        uids = await _pixiv_instance.user_mypixiv(uid, page=page)
     except InfoNotFoundError:
         await session.send(M('未查询到信息'))
     except PixivError as e:
@@ -625,6 +659,9 @@ async def uid_search_mypixiv(session, bot):
 @uid_search_mypixiv.args_parser
 async def uid_search_mypixiv_parser(session):
     await common_pid_parser(session)
+    stripped_args = session.current_arg_text.strip()
+    re_page = re_page_object.search(stripped_args)
+    session.state['page'] = int(re_page.group(0)[1:]) if re_page else 1
 
 # 用户收藏作品
 @pixiv_command.command('uid_search_bookmarks', checkfunc=_check, aliases=('UID搜索收藏'))
@@ -666,7 +703,12 @@ async def common_pixiv_rank(session, mode: str):
     original = session.state['original']
     multiimage = session.state['multiimage']
     r18, r18g = await _getperm(session)
-    await session.send(M(f'开始搜索{commandname}第{page}页数据'))
+    if date:
+        year, month, day = [int(i) for i in date.split('-')]
+        date_str = f'{year}年{month}月{day}日'
+        await session.send(M(f'开始搜索{date_str}的{commandname}第{page}页数据'))
+    else:
+        await session.send(M(f'开始搜索{commandname}第{page}页数据'))
     try:
         await refreshtoken()
         pids = await _pixiv_instance.illust_ranking(mode=mode, page=page, date=date, min_bookmarks=minbookmarks, original_image=original, multiimage=multiimage, allowr18=r18, allowr18g=r18g)

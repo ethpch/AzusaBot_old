@@ -148,37 +148,10 @@ class pixiv_image():
         if id not in self.__data['users'].keys():
             self.__data['users'][id] = {'user': {}}
         self.__data['users'][id]['user'].update(user)
-        fileprefix = 'pixiv' if self.__pathflag else self.__imagepath
-        try:
-            url = self.__data['users'][id]['user']['profile_image_urls']['medium']
-            if url:
-                await self.__api.download(url, path=self.__imagepath, name=f'u_{user.id}_profile', replace=True)
-                ext = '.jpeg' if 'webp' in url or 'jpeg' in url else '.jpg' if 'jpg' in url else '.png'
-                self.__data['users'][id]['user']['profile_image'] = os.path.join(fileprefix, f'u_{user.id}_profile' + ext)
-            else:
-                self.__data['users'][id]['user']['profile_image'] = ''
-        except KeyError:
-            self.__data['users'][id]['user']['profile_image'] = ''
         if profile or 'profile' not in self.__data['users'][id].keys():
             self.__data['users'][id]['profile'] = profile
-            if self.__data['users'][id]['profile']:
-                url = self.__data['users'][id]['profile']['background_image_url']
-                if url:
-                    await self.__api.download(url, path=self.__imagepath, name=f'u_{user.id}_background', replace=True)
-                    ext = '.jpeg' if 'webp' in url or 'jpeg' in url else '.jpg' if 'jpg' in url else '.png'
-                    self.__data['users'][id]['profile']['background_image'] = os.path.join(fileprefix, f'u_{user.id}_background' + ext)
-                else:
-                    self.__data['users'][id]['profile']['background_image'] = ''
         if workspace or 'workspace' not in self.__data['users'][id].keys():
             self.__data['users'][id]['workspace'] = workspace
-            if self.__data['users'][id]['workspace']:
-                url = self.__data['users'][id]['workspace']['workspace_image_url']
-                if url:
-                    await self.__api.download(url, path=self.__imagepath, name=f'u_{user.id}_workspace', replace=True)
-                    ext = '.jpeg' if 'webp' in url or 'jpeg' in url else '.jpg' if 'jpg' in url else '.png'
-                    self.__data['users'][id]['workspace']['workspace_image'] = os.path.join(fileprefix, f'u_{user.id}_workspace' + ext)
-                else:
-                    self.__data['users'][id]['workspace']['workspace_image'] = ''
         if 'illusts' not in self.__data['users'][id].keys():
             self.__data['users'][id]['illusts'] = []
         if illusts:
@@ -449,7 +422,7 @@ class pixiv_image():
     @debuglog(logger)
     async def search_illust(self, keywords: str, *args, search_target: str='partial_match_for_tags', min_bookmarks: int=0, **kwargs) -> tuple:
         """
-        搜索功能。
+        搜索图片功能。
         参数：
             keywords：关键字字符串
             search_target：可选值为：
@@ -465,6 +438,25 @@ class pixiv_image():
         返回值：
             返回一个元组，由pid组成
         """
+        keywords_list = keywords.split(' ')
+        result_keywords_list = []
+        for item in keywords_list:
+            temptag = item
+            temp = await self.__api.search_illust(word=temptag)
+            class jumpout(Exception):
+                pass
+            try:
+                for illust in temp.illusts:
+                    for tag in illust.tags:
+                        if tag['translated_name'] and not tag['name'].isalpha()\
+                            and item in tag['translated_name'] and not tag['name'].endswith('users入り'):
+                            temptag = tag['name']
+                            raise jumpout
+            except (AttributeError, jumpout):
+                pass
+            result_keywords_list.append(temptag)
+        if result_keywords_list:
+            keywords = ' '.join(result_keywords_list)
         if min_bookmarks >= 5000:
             keywords += ' users入り'
         json_result = await self.__api.search_illust(word=keywords, search_target=search_target, req_auth=self.__loginflag)
@@ -487,7 +479,22 @@ class pixiv_image():
         profile = json_result.profile
         workspace = json_result.workspace
         await self.__newuser(user, profile, workspace)
+        await self.__udownload(uid)
         return (uid,)
+
+    # 搜索用户
+    @debuglog(logger)
+    async def search_user(self, keywords: str, *args, **kwargs) -> tuple:
+        """
+        搜索用户功能。
+        参数：
+            keywords：关键字字符串
+        返回值：
+            返回一个元组，由uid组成
+        """
+        json_result = await self.__api.search_user(word=keywords)
+        func = self.__api.search_user
+        return await self.__usercontent(json_result, func, *args, **kwargs)
 
     # 用户作品列表
     @debuglog(logger)
@@ -513,7 +520,7 @@ class pixiv_image():
 
     # 关注用户
     @debuglog(logger)
-    async def user_following(self, uid: int, page: int=1):
+    async def user_following(self, uid: int, *args, **kwargs):
         """
         查询指定用户的关注用户列表。
         参数：
@@ -524,11 +531,11 @@ class pixiv_image():
         """
         json_result = await self.__api.user_following(uid)
         func = self.__api.user_following
-        return await self.__usercontent(json_result, func, page)
+        return await self.__usercontent(json_result, func, *args, **kwargs)
 
     # 好P友
     @debuglog(logger)
-    async def user_mypixiv(self, uid: int, page: int=1):
+    async def user_mypixiv(self, uid: int, *args, **kwargs):
         """
         查询指定用户的好P友。
         参数：
@@ -539,7 +546,7 @@ class pixiv_image():
         """
         json_result = await self.__api.user_mypixiv(uid)
         func = self.__api.user_mypixiv
-        return await self.__usercontent(json_result, func, page)
+        return await self.__usercontent(json_result, func, *args, **kwargs)
     
     # 用户收藏作品列表
     @debuglog(logger)
@@ -570,7 +577,7 @@ class pixiv_image():
             json_result,
             func=None,
             *,
-            type: str=None,
+            type: str='illust',
             page: int=1,
             min_bookmarks: int=0,
             original_image: bool=False,
@@ -633,19 +640,54 @@ class pixiv_image():
             raise InfoNotFoundError
 
     @debuglog(logger)
-    async def __usercontent(self, json_result, func=None, page: int=1) -> tuple:
-        if page > 1:
-            for i in range(1, page):
-                next_qs = self.__api.parse_qs(json_result.next_url)
-                if next_qs is None:
-                    raise InfoNotFoundError
-                json_result = await func(**next_qs)
-        users = json_result.user_previews
-        for user in users:
-            await self.__newuser(user.user)
-            for illust in user.illusts:
-                await self.__newpic(illust)
-        return tuple([user.user.id for user in users])
+    async def __usercontent(self,
+            json_result,
+            func=None,
+            *,
+            page: int=1
+        ) -> tuple:
+        result = []
+        _page = 1
+        temp_storage = []
+        first_loop = True
+        get_next = False
+        while _page <= page:
+            while len(result) < self.__pagesize:
+                if first_loop or get_next:
+                    try:
+                        users = json_result.user_previews
+                    except AttributeError:
+                        break
+                    for user in users:
+                        await self.__newuser(user.user)
+                        [await self.__newpic(illust) for illust in user.illusts]
+                    ids = tuple([user.user.id for user in users])
+                    first_loop = False
+                else:
+                    ids = []
+                result.extend(temp_storage)
+                result.extend(ids)
+                if len(result) < self.__pagesize:
+                    next_qs = self.__api.parse_qs(json_result.next_url)
+                    if next_qs is None:
+                        get_next = False
+                        break
+                    json_result = await func(**next_qs)
+                    get_next = True
+                    temp_storage.clear()
+                else:
+                    get_next = False
+                    temp_storage = result[self.__pagesize:]
+            if _page < page:
+                result.clear()
+            _page += 1
+        result = result[:self.__pagesize]
+        for id in result:
+            await self.__udownload(id)
+        if result:
+            return tuple(result)
+        else:
+            raise InfoNotFoundError
 
     # 执行下载操作并加入图库
     @debuglog(logger)
@@ -660,6 +702,37 @@ class pixiv_image():
             self.__data['illusts'][pid]['files'][type].append(os.path.join(fileprefix, f'{pid}_{i}_{type}' + ext))
             self.__data['illusts'][pid]['files'][type] = list(set(self.__data['illusts'][pid]['files'][type]))
             self.__data['illusts'][pid]['files'][type].sort()
+
+    # 用户头像、横幅、工作环境图片下载并加入用户资料库
+    @debuglog(logger)
+    async def __udownload(self, uid: int):
+        fileprefix = 'pixiv' if self.__pathflag else self.__imagepath
+        try:
+            url = self.__data['users'][uid]['user']['profile_image_urls']['medium']
+            if url:
+                await self.__api.download(url, path=self.__imagepath, name=f'u_{uid}_profile', replace=True)
+                ext = '.jpeg' if 'webp' in url or 'jpeg' in url else '.jpg' if 'jpg' in url else '.png'
+                self.__data['users'][uid]['user']['profile_image'] = os.path.join(fileprefix, f'u_{uid}_profile' + ext)
+            else:
+                self.__data['users'][uid]['user']['profile_image'] = ''
+        except KeyError:
+            self.__data['users'][uid]['user']['profile_image'] = ''
+        if self.__data['users'][uid]['profile']:
+            url = self.__data['users'][uid]['profile']['background_image_url']
+            if url:
+                await self.__api.download(url, path=self.__imagepath, name=f'u_{uid}_background', replace=True)
+                ext = '.jpeg' if 'webp' in url or 'jpeg' in url else '.jpg' if 'jpg' in url else '.png'
+                self.__data['users'][uid]['profile']['background_image'] = os.path.join(fileprefix, f'u_{uid}_background' + ext)
+            else:
+                self.__data['users'][uid]['profile']['background_image'] = ''
+        if self.__data['users'][uid]['workspace']:
+            url = self.__data['users'][uid]['workspace']['workspace_image_url']
+            if url:
+                await self.__api.download(url, path=self.__imagepath, name=f'u_{uid}_workspace', replace=True)
+                ext = '.jpeg' if 'webp' in url or 'jpeg' in url else '.jpg' if 'jpg' in url else '.png'
+                self.__data['users'][uid]['workspace']['workspace_image'] = os.path.join(fileprefix, f'u_{uid}_workspace' + ext)
+            else:
+                self.__data['users'][uid]['workspace']['workspace_image'] = ''
 
     # 图库统计
     @debuglog(logger)
@@ -802,7 +875,7 @@ class pixiv_image():
         if tags:
             taggedset = []
             for tag in tags:
-                taggedset.extend([id for id in ids if tag in str(self.__data['illusts'][id]['tags'])])
+                taggedset.extend([id for id in ids if tag.upper() in str(self.__data['illusts'][id]['tags'])])
             if not taggedset:
                 taggedset = [id for id in ids or ids if 'ロリ' in str(self.__data['illusts'][id]['tags'])]
                 signal = False
