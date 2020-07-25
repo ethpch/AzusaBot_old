@@ -592,20 +592,20 @@ class master():
                 raise IndexError
         if reverse:
             if len(index) == 1:
-                return lastattack[index[0] - 1:index[0]], len(self.__lastattack)
+                return lastattack[index[0] - 1:index[0]], len(lastattack)
             elif len(index) == 2:
-                return lastattack[index[0] - 1:index[1]], len(self.__lastattack)
+                return lastattack[index[0] - 1:index[1]], len(lastattack)
         else:
             if len(index) == 1:
                 if ~index[0] + 2 >= 0:
-                    return lastattack[~index[0] + 1:], len(self.__lastattack)
+                    return lastattack[~index[0] + 1:], len(lastattack)
                 else:
-                    return lastattack[~index[0] + 1:~index[0] + 2], len(self.__lastattack)
+                    return lastattack[~index[0] + 1:~index[0] + 2], len(lastattack)
             elif len(index) == 2:
                 if ~index[0] + 2 >= 0:
                     return lastattack[~index[1] + 1:], len(lastattack)
                 else:
-                    return lastattack[~index[1] + 1:~index[0] + 2], len(self.__lastattack)
+                    return lastattack[~index[1] + 1:~index[0] + 2], len(lastattack)
 
     # 查询预约刀信息
     @debuglog(logger)

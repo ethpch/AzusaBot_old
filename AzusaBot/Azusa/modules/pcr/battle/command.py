@@ -1109,14 +1109,14 @@ async def lastattack(session, bot):
         else:
             msg.append(MS.text(f'未记录{"玩家" + name + "的" if name else ""}倒序第{index[0] if len(index) == 1 else str(index[1]) + "到倒序第" + str(index[0])}刀的信息哦'))
     await session.send(msg)
-
+    
+re_index_object = re.compile(r'\d+(-\d+)?')
 @lastattack.args_parser
 async def lastattack_parser(session):
     if not _check(session):
         return
     stripped_args = session.current_arg_text.strip()
     if stripped_args:
-        re_index_object = re.compile(r'\d+(-\d+)?')
         re_index = re_index_object.search(stripped_args)
         session.state['index'] = tuple([int(i) for i in re_index.group(0).split('-')]) if re_index else (1,)
         if len(session.state['index']) > 1:
@@ -1189,7 +1189,8 @@ async def solutions_parser(session):
             elif paramList[0] == '查询':
                 session.state['type'] = 'query'
             else:
-                session.finish(M('必须输入有效的操作类型。会话已结束，请重新输入命令。'))
+                session.state['type'] = 'query'
+                paramList.insert(0, '')
             session.state['stage'] = int(paramList[1])
         except (ValueError, IndexError):
             pass
