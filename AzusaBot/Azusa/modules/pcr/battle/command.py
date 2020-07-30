@@ -154,7 +154,7 @@ async def addplayer_parser(session):
     if paramList:
         session.state['name'] = paramList[0]
     else:
-        session.state['name'] = session.event['sender']['card'] or session.event['sender']['nickname']
+        session.state['name'] = (session.event['sender']['card'] or session.event['sender']['nickname']).replace(' ', '')
             
 
 # 解除注册
@@ -1182,7 +1182,7 @@ async def solutions_parser(session):
             session.state['path'] = tuple(imageList)
         session.state['retry'] = 1
         try:
-            if paramList[0] == '提交':
+            if paramList[0] == '提交' or paramList[0] == '上传':
                 session.state['type'] = 'submit'
             elif paramList[0] == '删除':
                 session.state['type'] = 'delete'
